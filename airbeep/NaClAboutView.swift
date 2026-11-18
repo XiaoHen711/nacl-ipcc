@@ -58,7 +58,7 @@ struct NaClAboutContent: View {
             }
 
             Section("简介") {
-                Text("卡贴机运营商配置锁定工具，氯化钠（NaCl）分支的 IPCC 产品。只保留「锁定 IPCC」能力，不含通话录音提示音功能。")
+                Text("卡贴机运营商配置锁定工具。把 Apple 已签名的运营商配置写进本机 iPhone 目录，让 CommCenter 优先选中指定运营商的 IPCC。")
                 Text("支持系统：\(SystemCompatibility.supportedRangeDescription)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
