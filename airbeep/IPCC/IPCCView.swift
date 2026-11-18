@@ -19,6 +19,7 @@ final class IPCCViewModel: ObservableObject {
     @Published private(set) var tunnelAddress: String?
     /// 「检测写入通道」的结果，nil 表示还没测过。
     @Published private(set) var channelMessage: String?
+    @Published private(set) var channelReady = false
     @Published private(set) var isCheckingChannel = false
 
     private var pump: Task<Void, Never>?
@@ -70,8 +71,16 @@ final class IPCCViewModel: ObservableObject {
                 _ = try await TendiesEngine.shared.detectPosterBoardContainer(
                     pairingPath: PairingController.pairingFilePath()
                 )
-                channelMessage = "写入通道可用"
+                let summary = await IPCCInstaller.shared.capabilitySummary()
+                if summary.isEmpty {
+                    channelReady = false
+                    channelMessage = "隧道通了，但当前构建没有注入入口（inject_folder / write_dir 都缺失）"
+                } else {
+                    channelReady = true
+                    channelMessage = "写入通道可用（\(summary)）"
+                }
             } catch {
+                channelReady = false
                 channelMessage = "通道检测失败：\(error.localizedDescription)"
             }
         }
@@ -363,26 +372,19 @@ struct NaClLockView: View {
 
     private var channelIcon: String {
         if model.isCheckingChannel { return "arrow.triangle.2.circlepath" }
-        if let message = model.channelMessage {
-            return message.hasPrefix("写入通道可用") ? "checkmark.seal.fill" : "xmark.seal.fill"
-        }
-        return "questionmark.circle"
+        if model.channelMessage == nil { return "questionmark.circle" }
+        return model.channelReady ? "checkmark.seal.fill" : "xmark.seal.fill"
     }
 
     private var channelTint: Color {
-        if model.isCheckingChannel { return .secondary }
-        if let message = model.channelMessage {
-            return message.hasPrefix("写入通道可用") ? .green : .red
-        }
-        return .secondary
+        if model.isCheckingChannel || model.channelMessage == nil { return .secondary }
+        return model.channelReady ? .green : .red
     }
 
     private var channelDetail: String {
         if model.isCheckingChannel { return "检测中…" }
-        if let message = model.channelMessage {
-            return message.hasPrefix("写入通道可用") ? "可用" : "不可用"
-        }
-        return "未检测"
+        if model.channelMessage == nil { return "未检测" }
+        return model.channelReady ? "可用" : "不可用"
     }
 
     private func statusRow(systemImage: String, tint: Color, title: String, detail: String) -> some View {

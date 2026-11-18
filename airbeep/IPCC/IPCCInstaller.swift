@@ -22,33 +22,15 @@ enum IPCCError: LocalizedError {
     }
 }
 
-/// Builds a signed carrier-bundle copy locally, then hands the whole folder to
-/// airlift's `al_exploit_inject_folder`, which moves it through AirTraffic into
-/// the device's `Carrier Bundles/iPhone` directory outside this app's sandbox.
+/// Builds a signed carrier-bundle copy locally, then pushes it through airlift's
+/// AirTraffic channel into the device's `Carrier Bundles/iPhone` directory.
+///
+/// The entry points are reached through `AirliftWriteShim` instead of
+/// `dlsym(RTLD_DEFAULT, ...)`: on iOS the main executable's symbols are not in
+/// the dynamic symbol table, so `dlsym` never found `al_exploit_write_dir` even
+/// when the linker had pulled it in.
 actor IPCCInstaller {
     static let shared = IPCCInstaller()
-
-    private typealias LogCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> Void
-
-    private typealias WriteDirFn = @convention(c) (
-        UnsafePointer<CChar>?,
-        UnsafePointer<CChar>?,
-        UnsafePointer<CChar>?,
-        LogCallback?,
-        UnsafeMutableRawPointer?,
-        UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
-    ) -> Int32
-
-    private typealias RespringFn = @convention(c) (
-        UnsafePointer<CChar>?,
-        LogCallback?,
-        UnsafeMutableRawPointer?,
-        UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
-    ) -> Int32
-
-    private static func rtlDefaultHandle() -> UnsafeMutableRawPointer? {
-        UnsafeMutableRawPointer(bitPattern: -2)
-    }
 
     /// Version bumped past the stock bundle so CommCenter prefers the Overlay
     /// copy even right after a system update. Signatures cover `*.der.pri`
@@ -175,12 +157,60 @@ actor IPCCInstaller {
 
     // MARK: - Device transfer
 
-    private func injectFolder(source: URL, carrier: IPCCCarrier, pairingPath: String) throws {
-        let target = "\(IPCCCarrierCatalog.deviceRoot)/\(carrier.bundleName)"
+    /// Which transfer primitives the pinned Rust core actually exports.
+    /// Checked at runtime because the vendored archive does not implement every
+    /// function declared in airlift.h.
+    struct AirliftCapabilities {
+        let writeDir: Bool
+        let injectFolder: Bool
+        let respring: Bool
 
-        // Airlift at commit 40640c4 only ships al_exploit_write_dir (no
-        // al_exploit_inject_folder), so the bundle is pushed in two passes:
-        // the flat files first, then the signatures subdirectory.
+        var description: String {
+            "inject_folder=\(injectFolder) write_dir=\(writeDir) respring=\(respring)"
+        }
+    }
+
+    var capabilities: AirliftCapabilities {
+        AirliftCapabilities(
+            writeDir: nacl_has_write_dir() != 0,
+            injectFolder: nacl_has_inject_folder() != 0,
+            respring: nacl_has_respring() != 0
+        )
+    }
+
+    /// Comma-free one-liner for the status card, e.g. `inject_folder / respring`.
+    func capabilitySummary() -> String {
+        let caps = capabilities
+        var parts: [String] = []
+        if caps.injectFolder { parts.append("inject_folder") }
+        if caps.writeDir { parts.append("write_dir") }
+        if caps.respring { parts.append("respring") }
+        return parts.joined(separator: " / ")
+    }
+
+    private func injectFolder(source: URL, carrier: IPCCCarrier, pairingPath: String) throws {
+        let root = IPCCCarrierCatalog.deviceRoot
+        let target = "\(root)/\(carrier.bundleName)"
+        let caps = capabilities
+        AirBeepLog.shared.append("airlift 能力：\(caps.description)")
+
+        if caps.injectFolder {
+            AirBeepLog.shared.append("使用 inject_folder 整目录写入 \(target)")
+            try runInjectFolder(
+                source: source.path,
+                parent: root,
+                name: carrier.bundleName,
+                pairingPath: pairingPath
+            )
+            return
+        }
+
+        guard caps.writeDir else {
+            throw IPCCError.airliftUnavailable
+        }
+
+        // Fallback: write_dir in two passes — the flat files first, then the
+        // signatures subdirectory.
         let flat = try makeFlatCopy(of: source)
         defer { try? FileManager.default.removeItem(at: flat) }
         try writeDirectory(source: flat.path, target: target, pairingPath: pairingPath)
@@ -211,17 +241,39 @@ actor IPCCInstaller {
         return flat
     }
 
-    private func writeDirectory(source: String, target: String, pairingPath: String) throws {
-        guard let symbol = dlsym(Self.rtlDefaultHandle(), "al_exploit_write_dir") else {
-            throw IPCCError.airliftUnavailable
+    private func runInjectFolder(source: String, parent: String, name: String, pairingPath: String) throws {
+        var outputError: UnsafeMutablePointer<CChar>?
+        let result = pairingPath.withCString { pairingCString in
+            source.withCString { sourceCString in
+                parent.withCString { parentCString in
+                    name.withCString { nameCString in
+                        nacl_inject_folder(
+                            pairingCString,
+                            sourceCString,
+                            parentCString,
+                            nameCString,
+                            AirBeepLog.ffiCallback,
+                            nil,
+                            &outputError
+                        )
+                    }
+                }
+            }
         }
-        let write = unsafeBitCast(symbol, to: WriteDirFn.self)
 
+        let message = outputError.map { String(cString: $0) }
+        if let outputError { al_string_free(outputError) }
+        guard result == 0 else {
+            throw IPCCError.airliftFailed(message ?? "al_exploit_inject_folder 返回 \(result)（目标 \(parent)/\(name)）")
+        }
+    }
+
+    private func writeDirectory(source: String, target: String, pairingPath: String) throws {
         var outputError: UnsafeMutablePointer<CChar>?
         let result = pairingPath.withCString { pairingCString in
             source.withCString { sourceCString in
                 target.withCString { targetCString in
-                    write(
+                    nacl_write_dir(
                         pairingCString,
                         sourceCString,
                         targetCString,
@@ -241,14 +293,13 @@ actor IPCCInstaller {
     }
 
     func respring(pairingPath: String) throws {
-        guard let symbol = dlsym(Self.rtlDefaultHandle(), "al_device_respring") else {
+        guard nacl_has_respring() != 0 else {
             throw IPCCError.airliftUnavailable
         }
-        let respring = unsafeBitCast(symbol, to: RespringFn.self)
 
         var outputError: UnsafeMutablePointer<CChar>?
         let result = pairingPath.withCString { pairingCString in
-            respring(pairingCString, AirBeepLog.ffiCallback, nil, &outputError)
+            nacl_respring(pairingCString, AirBeepLog.ffiCallback, nil, &outputError)
         }
 
         let message = outputError.map { String(cString: $0) }
