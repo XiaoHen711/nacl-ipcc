@@ -39,11 +39,17 @@ actor IPCCInstaller {
     private static let forcedBuildVersion = "9999"
 
     func install(carrier: IPCCCarrier, pairingPath: String) async throws -> URL {
+        AirBeepLog.shared.append("开始写入 \(carrier.displayName)（\(carrier.id)）")
+        AirBeepLog.shared.append("目标目录 \(IPCCCarrierCatalog.deviceRoot)/\(carrier.bundleName)")
         let staged = try stage(carrier: carrier)
+        let files = (try? FileManager.default.subpathsOfDirectory(atPath: staged.path).count) ?? 0
+        AirBeepLog.shared.append("本地打包完成 \(staged.lastPathComponent)：\(files) 个条目")
         do {
             try injectFolder(source: staged, carrier: carrier, pairingPath: pairingPath)
+            AirBeepLog.shared.append("写入通道返回成功")
             return staged
         } catch {
+            AirBeepLog.shared.append("写入失败：\(error.localizedDescription)")
             throw error
         }
     }

@@ -8,6 +8,8 @@ struct AirBeepApp: App {
         // adds the current LocalDevVPN/Wi-Fi addresses as extra candidates so
         // the tunnel adapts to the actual network without any probing.
         NetworkStatus.syncTargetHostsToAirlift()
+        // Record the environment once, so an exported log explains itself.
+        NaClDiagnostics.logStartup()
     }
 
     var body: some Scene {

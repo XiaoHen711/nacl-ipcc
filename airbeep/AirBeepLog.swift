@@ -43,7 +43,7 @@ final class AirBeepLog {
     func exportText() -> String {
         let stamp = ISO8601DateFormatter().string(from: Date())
         let body = snapshot().joined(separator: "\n")
-        return "氯化钠 log — \(stamp)\n----------------------------\n\(body)"
+        return "NaCl IPCC log — \(stamp)\n----------------------------\n\(body)"
     }
 
     func clear() {

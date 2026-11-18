@@ -65,12 +65,14 @@ final class IPCCViewModel: ObservableObject {
         refreshStatus()
         isCheckingChannel = true
         channelMessage = nil
+        AirBeepLog.shared.append("检测通道：配对=\(pairingReady) 隧道=\(tunnelReady) addr=\(tunnelAddress ?? "-")")
         Task {
             defer { isCheckingChannel = false }
             do {
-                _ = try await TendiesEngine.shared.detectPosterBoardContainer(
+                let container = try await TendiesEngine.shared.detectPosterBoardContainer(
                     pairingPath: PairingController.pairingFilePath()
                 )
+                AirBeepLog.shared.append("容器查询成功：\(container)")
                 let summary = await IPCCInstaller.shared.capabilitySummary()
                 if summary.isEmpty {
                     channelReady = false
@@ -82,6 +84,7 @@ final class IPCCViewModel: ObservableObject {
             } catch {
                 channelReady = false
                 channelMessage = "通道检测失败：\(error.localizedDescription)"
+                AirBeepLog.shared.append("容器查询失败：\(error.localizedDescription)")
             }
         }
     }
