@@ -20,8 +20,8 @@ final class LockStore: ObservableObject {
         return formatter
     }()
 
-    init(service: CarrierOverlayService = MockCarrierOverlayService()) {
-        self.service = service
+    init(service: CarrierOverlayService? = nil) {
+        self.service = service ?? MockCarrierOverlayService()
         append(.info, "airtrafficd 未连接（演示模式）")
         append(.info, "已加载 \(CarrierBundle.presets.count) 个运营商配置")
     }
