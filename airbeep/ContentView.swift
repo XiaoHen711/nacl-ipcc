@@ -14,7 +14,7 @@ struct AirBeepApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NaClRootView()
+            RootView()
         }
     }
 }

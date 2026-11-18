@@ -54,6 +54,64 @@ actor IPCCInstaller {
         }
     }
 
+    // MARK: - 细粒度接口（界面按步骤调用）
+
+    /// 只做写入，不打包；`staged` 来自 `stage(carrier:)`。
+    func write(staged: URL, carrier: IPCCCarrier, pairingPath: String) throws {
+        try injectFolder(source: staged, carrier: carrier, pairingPath: pairingPath)
+    }
+
+    /// 同样的外壳，但把版本号归零，用于「恢复」时让 CommCenter 回落到系统配置。
+    func stageDisabled(carrier: IPCCCarrier) throws -> URL {
+        let staged = try stage(carrier: carrier)
+        try overrideVersion(in: staged, build: "0", short: "0.0")
+        return staged
+    }
+
+    private func overrideVersion(in bundle: URL, build: String, short: String) throws {
+        let infoURL = bundle.appending(path: "Info.plist")
+        var info = try readPlist(at: infoURL)
+        info["CFBundleVersion"] = build
+        info["CFBundleShortVersionString"] = short
+        try writePlist(info, to: infoURL)
+
+        let versionURL = bundle.appending(path: "version.plist")
+        if FileManager.default.fileExists(atPath: versionURL.path) {
+            var version = try readPlist(at: versionURL)
+            version["CFBundleVersion"] = build
+            version["CFBundleShortVersionString"] = short
+            version["BuildVersion"] = build
+            try writePlist(version, to: versionURL)
+        }
+    }
+
+    /// 通过 AirTraffic 读回设备上的文件，用于写入后的结果校验。
+    func readDeviceFile(_ path: String, pairingPath: String) throws -> Data {
+        var bytes: UnsafeMutablePointer<UInt8>?
+        var length = 0
+        var outputError: UnsafeMutablePointer<CChar>?
+        let result = pairingPath.withCString { pairingCString in
+            path.withCString { pathCString in
+                al_exploit_read_file(
+                    pairingCString,
+                    pathCString,
+                    AirBeepLog.ffiCallback,
+                    nil,
+                    &bytes,
+                    &length,
+                    &outputError
+                )
+            }
+        }
+        let message = outputError.map { String(cString: $0) }
+        if let outputError { al_string_free(outputError) }
+        guard result == 0, let bytes else {
+            throw IPCCError.airliftFailed(message ?? "al_exploit_read_file 返回 \(result)")
+        }
+        defer { al_bytes_free(bytes, length) }
+        return Data(bytes: bytes, count: length)
+    }
+
     // MARK: - Staging
 
     /// Unpacks the signed template, swaps `carrier.plist`, rewrites the bundle
