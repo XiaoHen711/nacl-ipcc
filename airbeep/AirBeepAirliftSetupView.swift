@@ -58,6 +58,7 @@ struct AirBeepAirliftSetupView: View {
             }
             .navigationTitle("Airlift Setup")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { refreshPairingState() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -105,7 +106,7 @@ struct AirBeepAirliftSetupView: View {
                 .foregroundStyle(.green)
             Text("Airlift Ready")
                 .font(.largeTitle.bold())
-            Text("Pairing and LocalDevVPN are ready. Return to 氯化钠 to read or change the recording tones.")
+            Text("Pairing and LocalDevVPN are ready. Return to NaCl IPCC to run the carrier lock.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Spacer()
@@ -117,6 +118,13 @@ struct AirBeepAirliftSetupView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(24)
+    }
+
+    private func refreshPairingState() {
+        let path = PairingController.pairingFilePath()
+        let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? Int) ?? 0
+        let exists = FileManager.default.fileExists(atPath: path) && size > 0
+        if exists { paired = true }
     }
 
     private func startPairing() {

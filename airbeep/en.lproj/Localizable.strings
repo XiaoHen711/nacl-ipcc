@@ -2,11 +2,11 @@
 "Done" = "Done";
 "Cancel" = "Cancel";
 "Pair this iPhone" = "Pair this iPhone";
-"Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with 氯化钠." = "Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with 氯化钠.";
+"Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with NaCl IPCC." = "Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with NaCl IPCC.";
 "Waiting for pairing…" = "Waiting for pairing…";
 "Start pairing" = "Start pairing";
 "Connect LocalDevVPN" = "Connect LocalDevVPN";
-"Open LocalDevVPN, tap Connect, then return to 氯化钠." = "Open LocalDevVPN, tap Connect, then return to 氯化钠.";
+"Open LocalDevVPN, tap Connect, then return to NaCl IPCC." = "Open LocalDevVPN, tap Connect, then return to NaCl IPCC.";
 "Open LocalDevVPN" = "Open LocalDevVPN";
 "Pair again" = "Pair again";
 "Checking connection…" = "Checking connection…";
@@ -41,7 +41,7 @@
 "Pair this iPhone and connect LocalDevVPN to allow 氯化钠 to access the recording tone files." = "Pair this iPhone and connect LocalDevVPN to allow 氯化钠 to access the recording tone files.";
 "Open Airlift Setup" = "Open Airlift Setup";
 "Airlift Ready" = "Airlift Ready";
-"Pairing and LocalDevVPN are ready. Return to 氯化钠 to read or change the recording tones." = "Pairing and LocalDevVPN are ready. Return to 氯化钠 to read or change the recording tones.";
+"Pairing and LocalDevVPN are ready. Return to NaCl IPCC to run the carrier lock." = "Pairing and LocalDevVPN are ready. Return to NaCl IPCC to run the carrier lock.";
 "About" = "About";
 "Telegram Channel" = "Telegram Channel";
 "Follow Channel" = "Follow Channel";
@@ -71,7 +71,7 @@
 "Wi-Fi Required" = "Wi-Fi Required";
 "Checking Wi-Fi…" = "Checking Wi-Fi…";
 "Airlift requires an active Wi-Fi connection. LocalDevVPN does not work over cellular." = "Airlift requires an active Wi-Fi connection. LocalDevVPN does not work over cellular.";
-"Connect this iPhone to a Wi-Fi network to continue. 氯化钠 will continue automatically once Wi-Fi is available." = "Connect this iPhone to a Wi-Fi network to continue. 氯化钠 will continue automatically once Wi-Fi is available.";
+"Connect this iPhone to a Wi-Fi network to continue. NaCl IPCC will continue automatically once Wi-Fi is available." = "Connect this iPhone to a Wi-Fi network to continue. NaCl IPCC will continue automatically once Wi-Fi is available.";
 "Import pairing file" = "Import pairing file";
 "Advanced" = "Advanced";
 "Advanced Settings" = "Advanced Settings";

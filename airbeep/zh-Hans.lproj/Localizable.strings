@@ -2,11 +2,11 @@
 "Done" = "完成";
 "Cancel" = "取消";
 "Pair this iPhone" = "配对这台 iPhone";
-"Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with 氯化钠." = "开始配对后，前往“设置 › 隐私与安全性 › 开发者模式 › 与 氯化钠 配对”。";
+"Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with NaCl IPCC." = "开始配对后，前往“设置 › 隐私与安全性 › 开发者模式 › 与 NaCl IPCC 配对”。";
 "Waiting for pairing…" = "等待配对…";
 "Start pairing" = "开始配对";
 "Connect LocalDevVPN" = "连接 LocalDevVPN";
-"Open LocalDevVPN, tap Connect, then return to 氯化钠." = "打开 LocalDevVPN，点击“连接”，连接成功后返回 氯化钠。";
+"Open LocalDevVPN, tap Connect, then return to NaCl IPCC." = "打开 LocalDevVPN，点击“连接”，连接成功后返回 NaCl IPCC。";
 "Open LocalDevVPN" = "打开 LocalDevVPN";
 "Pair again" = "重新配对";
 "Checking connection…" = "检查连接…";
@@ -41,7 +41,7 @@
 "Pair this iPhone and connect LocalDevVPN to allow 氯化钠 to access the recording tone files." = "请配对这台 iPhone 并连接 LocalDevVPN，以允许 氯化钠 访问录音提示音文件。";
 "Open Airlift Setup" = "打开 Airlift 设置";
 "Airlift Ready" = "Airlift 已就绪";
-"Pairing and LocalDevVPN are ready. Return to 氯化钠 to read or change the recording tones." = "配对和 LocalDevVPN 已就绪，请返回 氯化钠 读取或修改录音提示音。";
+"Pairing and LocalDevVPN are ready. Return to NaCl IPCC to run the carrier lock." = "配对记录与 LocalDevVPN 已就绪，返回 NaCl IPCC 执行锁定。";
 "About" = "关于";
 "Telegram Channel" = "Telegram 频道";
 "Follow Channel" = "关注频道";
@@ -71,7 +71,7 @@
 "Wi-Fi Required" = "需要连接 Wi-Fi";
 "Checking Wi-Fi…" = "正在检查 Wi-Fi…";
 "Airlift requires an active Wi-Fi connection. LocalDevVPN does not work over cellular." = "Airlift 需要已连接的 Wi-Fi。LocalDevVPN 无法在蜂窝网络下工作。";
-"Connect this iPhone to a Wi-Fi network to continue. 氯化钠 will continue automatically once Wi-Fi is available." = "请将这台 iPhone 连接到 Wi-Fi 后继续。Wi-Fi 可用时 氯化钠 会自动继续。";
+"Connect this iPhone to a Wi-Fi network to continue. NaCl IPCC will continue automatically once Wi-Fi is available." = "请将这台 iPhone 连接到 Wi-Fi 后继续。Wi-Fi 可用时 NaCl IPCC 会自动继续。";
 "Import pairing file" = "导入配对文件";
 "Advanced" = "高级";
 "Advanced Settings" = "高级设置";

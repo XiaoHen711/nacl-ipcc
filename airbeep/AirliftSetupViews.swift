@@ -75,7 +75,7 @@ struct AirliftWiFiRequiredView: View {
                 .font(.largeTitle.bold())
             Text("Airlift requires an active Wi-Fi connection. LocalDevVPN does not work over cellular.")
                 .foregroundStyle(.secondary)
-            Text("Connect this iPhone to a Wi-Fi network to continue. 氯化钠 will continue automatically once Wi-Fi is available.")
+            Text("Connect this iPhone to a Wi-Fi network to continue. NaCl IPCC will continue automatically once Wi-Fi is available.")
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -103,7 +103,7 @@ struct AirliftPairingView: View {
             Text("Pair this iPhone")
                 .font(.largeTitle.bold())
             if onDevicePairingSupported {
-                Text("Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with 氯化钠.")
+                Text("Start pairing, then open Settings › Privacy & Security › Developer Mode › Pair with NaCl IPCC.")
                     .foregroundStyle(.secondary)
                 if let pin {
                     Text(pin).font(.largeTitle.monospacedDigit())
@@ -178,7 +178,7 @@ struct PairingToolLinks: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func toolLink(name: String, detail: String, url: String) -> some View {
@@ -220,7 +220,7 @@ struct AirliftVPNView: View {
                 .foregroundStyle(.tint)
             Text("Connect LocalDevVPN")
                 .font(.largeTitle.bold())
-            Text("Open LocalDevVPN, tap Connect, then return to 氯化钠.")
+            Text("Open LocalDevVPN, tap Connect, then return to NaCl IPCC.")
                 .foregroundStyle(.secondary)
             Button("Open LocalDevVPN", action: openLocalDevVPN)
                 .buttonStyle(.bordered)
@@ -271,7 +271,7 @@ struct AirliftVPNView: View {
         .foregroundStyle(.secondary)
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 10))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func statusLine(symbol: String, label: String, value: String) -> some View {
