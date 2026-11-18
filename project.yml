@@ -24,9 +24,14 @@ targets:
       path: NaCl-Info.plist
       properties:
         CFBundleDisplayName: 氯化钠
+        CFBundleName: NaCl
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundlePackageType: APPL
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         CFBundleDevelopmentRegion: zh_CN
+        LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIUserInterfaceStyle: Dark
         UISupportedInterfaceOrientations:
