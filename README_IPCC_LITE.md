@@ -7,6 +7,8 @@
 
 **没有激活码，没有联网校验，没有任何服务端依赖。**
 
+> 原理与开源组件地图（含漏洞细节、许可、复现步骤）：[docs/PRINCIPLE.md](docs/PRINCIPLE.md)
+
 ## 它怎么工作
 
 1. 解包内置的 `O2_Germany.ipcc` —— 这是一份**真正被 Apple 签名过的运营商 bundle**，`signatures/` 与所有 `*.der.pri` 保持字节不变。
