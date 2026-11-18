@@ -80,6 +80,7 @@ final class IPCCViewModel: ObservableObject {
 struct IPCCView: View {
     @StateObject private var model = IPCCViewModel.shared
     @State private var showingSetup = false
+    @State private var showingAbout = false
     @State private var showingConfirmation = false
 
     var body: some View {
@@ -149,7 +150,18 @@ struct IPCCView: View {
                 }
             }
             .navigationTitle("锁定 IPCC")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingAbout = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("关于")
+                }
+            }
             .sheet(isPresented: $showingSetup) { AirBeepAirliftSetupView() }
+            .sheet(isPresented: $showingAbout) { NaClAboutView() }
             .confirmationDialog("确认写入运营商配置？", isPresented: $showingConfirmation, titleVisibility: .visible) {
                 Button("执行锁定", role: .destructive) { model.run() }
                 Button("取消", role: .cancel) {}

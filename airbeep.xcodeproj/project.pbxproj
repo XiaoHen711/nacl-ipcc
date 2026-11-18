@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000003 /* ZIPFoundation */; };
 		B10000000000000000000001 /* Vendor/AirCard/AirliftFFI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* Vendor/AirCard/AirliftFFI.xcframework */; };
-		D1664C2D303161240037E861 /* Appicon.icon in Resources */ = {isa = PBXBuildFile; fileRef = D1664C2C303161240037E861 /* Appicon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +39,6 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				D1664C2C303161240037E861 /* Appicon.icon */,
 				B10000000000000000000002 /* Vendor/AirCard/AirliftFFI.xcframework */,
 				000000000000000000000010 /* airbeep */,
 				000000000000000000000020 /* Products */,
@@ -121,7 +119,6 @@
 		000000000000000140000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				D1664C2D303161240037E861 /* Appicon.icon in Resources */,
 			);
 		};
 /* End PBXResourcesBuildPhase section */
@@ -271,7 +268,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AIRLIFT_TARGET_HOST = 10.7.0.1;
-				ASSETCATALOG_COMPILER_APPICON_NAME = Appicon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 32SCVH99SP;
@@ -279,7 +276,7 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Airlift-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "氯化钠";
+				INFOPLIST_KEY_CFBundleDisplayName = "NaCl IPCC";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "AirIPCC Lite pairs this iPhone with itself so Airlift can write carrier bundles through the local lockdown daemon.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -298,7 +295,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
@@ -327,7 +324,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AIRLIFT_TARGET_HOST = 10.7.0.1;
-				ASSETCATALOG_COMPILER_APPICON_NAME = Appicon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 32SCVH99SP;
@@ -335,7 +332,7 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Airlift-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "氯化钠";
+				INFOPLIST_KEY_CFBundleDisplayName = "NaCl IPCC";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "AirIPCC Lite pairs this iPhone with itself so Airlift can write carrier bundles through the local lockdown daemon.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -354,7 +351,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
