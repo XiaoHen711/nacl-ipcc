@@ -184,9 +184,7 @@ struct NaClLockView: View {
             }
             .onAppear { model.startStatusPump() }
             .onDisappear { model.stopStatusPump() }
-            .onChange(of: scenePhase) { phase in
-                if phase == .active { model.refreshStatus() }
-            }
+            .onChange(of: scenePhase, perform: handleScenePhase)
             .sheet(isPresented: $showingSetup, onDismiss: { model.refreshStatus() }) {
                 AirBeepAirliftSetupView()
             }
@@ -257,6 +255,10 @@ struct NaClLockView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func handleScenePhase(_ phase: ScenePhase) {
+        if phase == .active { model.refreshStatus() }
     }
 
     private var versionLine: String {

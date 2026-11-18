@@ -33,10 +33,10 @@ struct AirBeepAdvancedSettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .font(.body.monospaced())
-                        .onChange(of: customHost) {
+                        .onChange(of: customHost, perform: { _ in
                             savedNotice = nil
                             validate()
-                        }
+                        })
 
                     if let validationError {
                         Label(validationError, systemImage: "exclamationmark.triangle.fill")

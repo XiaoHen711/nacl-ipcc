@@ -1,58 +1,49 @@
-# AirBeep
+# NaCl IPCC
 
-> 🌍 **Languages:** English | [简体中文 (Simplified Chinese)](./README_zh-CN.md)
+> 卡贴机的运营商配置（IPCC）锁定工具。GPL-3.0 开源，无激活码、无 IMEI 绑定、无联网校验。
 
-AirBeep is an iOS utility that silences the built-in call-recording disclosure tones. Back up the original tones first, then silence the start and stop sounds with equal-length silence, and restore the originals from the backup whenever you want.
+NaCl IPCC 把 Apple 已签名的运营商配置外壳写进本机的 `Carrier Bundles/iPhone` 目录，让 CommCenter
+优先选中你指定的运营商 bundle。它不解除网络锁，也不改运营商激活策略，只负责「让本机用哪份 IPCC」。
 
+## 功能
 
-## Features
+- 选运营商 → 写入 → 注销重载，三步完成，主页单页操作。
+- 只替换 `carrier.plist`，保留模板里的 `signatures/` 与 `*.der.pri`，因此 Apple 的签名继续有效。
+- bundle 身份改写 + `CFBundleVersion` 提到 `9999`，压过系统自带 bundle。
+- 主页实时显示 **配对文件 / LocalDevVPN / 写入通道** 三项状态，可一键「检测通道」验证是否真能通。
+- 运行日志实时滚动，失败原因直接给到原文，不会只丢一句「失败」。
 
-- Separate actions: back up the original tones, silence them, and restore them — no ambiguous switch state.
-- The originals can be backed up before any change; the backup is kept and never overwritten.
-- File read-back verification after every write.
-- One-tap restoration from the local backup.
-- Advanced settings with a custom device IP and a live network-interface table for the loopback connection.
-- English and Simplified Chinese UI.
+## 原理
 
-## How it works
+1. 内置 Apple 签名的 `O2_Germany.ipcc` 作为外壳，解包后整份替换 `carrier.plist`。
+2. 改写 `Info.plist` / `version.plist` 的 bundle 身份与版本号。
+3. 通过 Airlift 的 AirTraffic 写入通道（`al_exploit_write_dir`）把整个目录推进
+   `/var/mobile/Library/Carrier Bundles/iPhone/`，随后 `al_device_respring` 注销重载。
 
-AirBeep requests scoped container access for these system files:
+详见 [docs/PRINCIPLE.md](docs/PRINCIPLE.md)。
 
-- `/var/mobile/Library/CallServices/Greetings/default/StartDisclosureWithTone.m4a`
-- `/var/mobile/Library/CallServices/Greetings/default/StartDisclosure.caf` (not shipped on every iOS release — skipped when absent)
-- `/var/mobile/Library/CallServices/Greetings/default/StopDisclosure.caf`
+## 运行要求
 
-The replacement files are based on the silent assets from AirliftSilence and keep the original durations. Backups are stored in the app's Documents directory under `AirBeepBackups`.
+- 真机 iPhone / iPad，功能可用范围：**iOS / iPadOS 18.0 – 27.2 B2**。
+  安装门槛已降到 iOS 16.0：低于 18.0 的设备可以装，但主页会提示写入通道不可用。
+- 需要 **配对文件** + **LocalDevVPN 回环隧道**（10.7.0.1）。iOS 27 起可在 App 内直接配对，
+  更低版本需要在电脑上用 iloader 生成配对文件后导入。
+- 签名需自己完成：用爱思 / Sideloadly 对 unsigned IPA 签名安装，或自备开发者证书。
 
-## Requirements
+## 构建
 
-- A physical iPhone or iPad running one of the supported iOS/iPadOS releases:
-  - **iOS/iPadOS 18.0 – 27.2 B2** — later versions are not supported.
-- Xcode 27 or newer for local builds.
-- The provided GitHub Actions workflow builds an unsigned IPA in the cloud.
+- 本地：打开 `airbeep.xcodeproj`，选 `airbeep` target，配好签名后真机构建。
+- 云端：GitHub Actions 的 `Release unsigned IPA` 工作流构建未签名 IPA（产物名 `airipcc-lite-v<version>-unsigned.ipa`）。
 
-> AirBeep relies on non-public system behavior. Compatibility can change between iOS releases. Removing a recording disclosure can affect whether another party is notified that a call is being recorded. Use the app only where permitted by local law and with the required consent.
+连接目标默认 `10.7.0.1`（LocalDevVPN 的设备 IP）；可用 `AIRLIFT_TARGET_HOST` 覆盖。
 
-## Build
+## 开源组件
 
-Open `airbeep.xcodeproj`, select the `airbeep` target, set your signing team, and build to a physical device.
+- [airlift](https://github.com/0xjohnnydev/airlift)：AirTraffic / Airlock 通道研究。
+- AirBeep：外壳、隧道封装与界面骨架（本项目由其派生）。
+- [AirliftSilence](https://github.com/YiHoooong/AirliftSilence)：早期提示音替换研究。
+- [Placard](https://github.com/frs0n/placard)：容器访问实现与工程结构参考。
 
-For an unsigned IPA, run the `Release unsigned IPA` workflow in GitHub Actions. The artifact is named `airbeep-v<version>-unsigned.ipa`.
+## 许可
 
-### Custom connection target
-
-Set the `AIRLIFT_TARGET_HOST` build setting to LocalDevVPN's **Device IP** (default: `10.7.0.1`). The app configures the native library once at startup, so setup checks and tone operations use the same target without resetting it before each file operation.
-
-First rebuild the patched native library with `scripts/build-airlift-xcframework.sh`, then build Release with `DEVELOPMENT_TEAM=<team> AIRLIFT_TARGET_HOST=<peer IP>`.
-
-On iOS 26.4 and later, legacy Lockdown loopback connections also depend on the physical Wi-Fi subnet. Configure both LocalDevVPN addresses for the actual network, check for address conflicts, and use precise routes rather than changing an existing proxy configuration. Reconfigure after changing Wi-Fi subnets. Target selection alone does not guarantee system-file access or successful tone replacement.
-
-## Credits
-
-- [AirliftSilence](https://github.com/YiHoooong/AirliftSilence) for the silent tone assets and replacement research.
-- [airlift](https://github.com/0xjohnnydev/airlift) by 0xjohnny for the AirTraffic and Airlock research retained in the project dependencies.
-- [Placard](https://github.com/frs0n/placard) contributors for the original iOS project structure and container-access implementation.
-
-## License
-
-AirBeep is released under the [GNU General Public License v3.0](LICENSE).
+GPL-3.0，见 [LICENSE](LICENSE)。仓库内的运营商配置数据来自 Apple 官方 IPCC，仅作研究与自用。
