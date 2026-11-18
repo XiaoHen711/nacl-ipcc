@@ -1,0 +1,60 @@
+name: build-ipa
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  unsigned-ipa:
+    runs-on: macos-15
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain info
+        run: |
+          xcodebuild -version
+          sw_vers
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project NaCl.xcodeproj \
+            -scheme NaCl \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/NaCl.app"
+          test -d "$APP"
+          rm -rf Payload dist
+          mkdir -p Payload dist
+          cp -R "$APP" Payload/
+          zip -qry "dist/NaCl-unsigned.ipa" Payload
+          ls -lh dist
+          shasum -a 256 dist/NaCl-unsigned.ipa | tee dist/NaCl-unsigned.ipa.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NaCl-unsigned-ipa
+          path: dist/
+          if-no-files-found: error

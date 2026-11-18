@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>氯化钠 NaCl · Carrier Overlay 演示</title>
+<style>
+  :root{
+    --bg:#060a08;
+    --screen:#0a0f0c;
+    --card:#111815;
+    --card2:#16201b;
+    --line:rgba(255,255,255,.075);
+    --text:#ecf4ef;
+    --muted:#8b9c93;
+    --accent:#3be08f;
+    --accent-dim:#2bbd77;
+    --accent-soft:rgba(59,224,143,.13);
+    --danger:#ff6a6a;
+    --warn:#ffb454;
+    --blue:#62c9f5;
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 520px at 12% -12%, #123425 0%, transparent 60%),
+      radial-gradient(700px 500px at 100% 110%, #0d2a20 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+    display:grid;place-items:center;padding:26px;
+    min-height:100%;
+  }
+  .stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .phone{
+    width:390px;height:844px;
+    background:#0d1310;
+    border:10px solid #1a221e;
+    border-radius:56px;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),0 0 90px -20px rgba(59,224,143,.18);
+    overflow:hidden;position:relative;
+  }
+  .screen{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    background:
+      radial-gradient(420px 240px at 50% -60px, rgba(59,224,143,.12), transparent 70%),
+      var(--screen);
+  }
+  /* status bar */
+  .statusbar{
+    height:46px;flex:0 0 46px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 26px;font-size:13.5px;font-weight:600;letter-spacing:.2px;color:#f2f8f4;
+  }
+  .sb-right{display:flex;align-items:center;gap:6px;opacity:.95}
+  /* content */
+  .content{flex:1;overflow-y:auto;padding:0 18px 14px;scrollbar-width:none}
+  .content::-webkit-scrollbar{width:0}
+  .pane{animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .banner{
+    display:flex;align-items:center;gap:8px;
+    font-size:11px;color:var(--muted);letter-spacing:.2px;
+    padding:5px 10px;margin:0 0 8px;
+    border:1px dashed rgba(59,224,143,.22);border-radius:10px;
+    background:rgba(59,224,143,.04);
+  }
+  .dot-live{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+
+  .hero{text-align:center;padding:0 0 10px}
+  .hero-mark{
+    width:64px;height:64px;margin:0 auto 8px;border-radius:50%;
+    display:grid;place-items:center;
+    background:radial-gradient(circle at 30% 25%, rgba(59,224,143,.28), rgba(59,224,143,.06) 62%, transparent 72%);
+    border:1px solid rgba(59,224,143,.35);
+    box-shadow:inset 0 0 30px rgba(59,224,143,.12),0 10px 30px -14px rgba(59,224,143,.55);
+    color:var(--accent);
+  }
+  .hero h1{font-size:23px;line-height:1.2;margin:0 0 5px;letter-spacing:.5px;font-weight:700}
+  .mark-word{display:flex;flex-direction:column;align-items:center;line-height:1;gap:3px}
+  .mark-word span{font-size:18px;font-weight:800;letter-spacing:.2px;color:var(--accent)}
+  .mark-word small{font-size:7px;font-weight:700;letter-spacing:1.6px;color:rgba(59,224,143,.55)}
+  .hero p{margin:0 auto;max-width:332px;font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.028),transparent 42%),var(--card);
+    border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin-bottom:10px;
+  }
+  /* status card */
+  .status{display:flex;gap:12px;align-items:flex-start}
+  .status-ico{
+    flex:0 0 38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(255,255,255,.05);color:var(--muted);
+  }
+  .status.ok{border-color:rgba(59,224,143,.3);background:linear-gradient(180deg,rgba(59,224,143,.1),rgba(59,224,143,.02)),var(--card)}
+  .status.ok .status-ico{background:rgba(59,224,143,.16);color:var(--accent)}
+  .status.bad{border-color:rgba(255,106,106,.32)}
+  .status.bad .status-ico{background:rgba(255,106,106,.14);color:var(--danger)}
+  .status-body{flex:1;min-width:0}
+  .status-title{font-size:14.5px;font-weight:600;margin-bottom:3px;word-break:break-all}
+  .status-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .status-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .chip{
+    font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:7px;
+    padding:3px 7px;background:rgba(255,255,255,.03);
+  }
+  .chip.mono{font-family:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;font-style:normal;letter-spacing:.2px}
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.14);border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bar{height:4px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:11px}
+  .bar > i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--accent-dim),var(--accent));transition:width .3s ease}
+
+  /* form */
+  .field-label{font-size:11px;letter-spacing:.6px;color:var(--muted);text-transform:uppercase;margin:0 0 6px 2px}
+  .field-label + .input-wrap{margin-bottom:8px}
+  .input-wrap{
+    display:flex;align-items:center;gap:8px;background:#0c1210;
+    border:1px solid var(--line);border-radius:12px;padding:0 12px;height:46px;
+  }
+  .input-wrap:focus-within{border-color:rgba(59,224,143,.45);box-shadow:0 0 0 3px rgba(59,224,143,.08)}
+  .input-wrap input{
+    flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);
+    font-family:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;font-style:normal;
+    font-size:16px;letter-spacing:1.2px;
+  }
+  .input-wrap input::placeholder{color:#4d5b54;letter-spacing:1px}
+  .hint{font-size:11px;color:#77887f;line-height:1.5;margin:4px 2px 8px}
+  .hint.mono{font-family:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;font-style:normal;font-size:10.5px;word-break:break-all}
+  .select{
+    width:100%;height:46px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#0c1210;border:1px solid var(--line);border-radius:12px;
+    padding:0 13px;color:var(--text);font-size:14.5px;cursor:pointer;
+  }
+  .select small{color:var(--muted);font-size:11.5px;font-weight:400}
+  .select:hover{border-color:rgba(255,255,255,.16)}
+
+  .btn{
+    width:100%;height:50px;border-radius:14px;border:1px solid transparent;
+    font-size:15.5px;font-weight:600;letter-spacing:.2px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .12s ease,filter .18s ease,background .18s ease;
+    margin-bottom:8px;font-family:inherit;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn.primary{background:linear-gradient(180deg,#49ec9c,#2fce83);color:#04170d;box-shadow:0 10px 24px -14px rgba(59,224,143,.9)}
+  .btn.primary:disabled{filter:grayscale(.6) brightness(.7);cursor:not-allowed;box-shadow:none}
+  .btn.ghost{background:rgba(255,255,255,.035);border-color:var(--line);color:#cfdcd5}
+  .btn.ghost:hover{background:rgba(255,255,255,.06)}
+  .btn.danger{background:rgba(255,106,106,.12);border-color:rgba(255,106,106,.25);color:#ff9d9d}
+
+  .row-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:2px;padding:11px 14px}
+  .row-title{font-size:14px;font-weight:500}
+  .row-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .switch{
+    flex:0 0 48px;height:28px;border-radius:20px;border:0;position:relative;cursor:pointer;
+    background:rgba(255,255,255,.13);transition:background .2s;
+  }
+  .switch::after{
+    content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+    background:#fff;transition:transform .2s;box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+  .switch[aria-pressed="true"]{background:var(--accent)}
+  .switch[aria-pressed="true"]::after{transform:translateX(20px)}
+
+  .footnote{text-align:center;font-size:11px;color:#5d6d66;margin:6px 0 4px;letter-spacing:.2px}
+
+  /* logs */
+  .pane-title{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 14px}
+  .pane-title h2{font-size:20px;margin:0;font-weight:700;letter-spacing:.3px}
+  .logbox{
+    background:#0b110e;border:1px solid var(--line);border-radius:14px;
+    padding:6px 0;max-height:520px;min-height:320px;overflow:auto;font-size:12px;
+    font-family:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;font-style:normal;
+  }
+  .log-row{display:flex;gap:8px;padding:6px 13px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.03)}
+  .log-row:last-child{border-bottom:0}
+  .log-time{color:#5b6b64;flex:0 0 auto}
+  .log-dot{flex:0 0 6px;height:6px;border-radius:50%;margin-top:6px;background:var(--muted)}
+  .log-row.info .log-dot{background:var(--blue)}
+  .log-row.ok .log-dot{background:var(--accent)}
+  .log-row.warn .log-dot{background:var(--warn)}
+  .log-row.error .log-dot{background:var(--danger)}
+  .log-text{flex:1;color:#c8d6cf;word-break:break-all}
+  .empty{padding:26px 14px;text-align:center;color:#5f6f68;font-size:12px}
+  .log-actions{display:flex;gap:10px;margin-top:12px}
+  .log-actions .btn{margin-bottom:0;height:46px;font-size:14px}
+
+  /* about */
+  .about-sec{margin-bottom:14px}
+  .about-sec h3{
+    font-size:12px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;
+    margin:0 0 7px 2px;font-weight:600;opacity:.9;
+  }
+  .about-sec p{font-size:13px;color:#b9c9c2;line-height:1.72;margin:0 0 8px}
+  .about-sec ul{margin:0;padding:0;list-style:none}
+  .about-sec li{
+    font-size:12.8px;color:#a9b9b2;line-height:1.6;padding:5px 0 5px 20px;position:relative;
+  }
+  .about-sec li::before{
+    content:"✕";position:absolute;left:0;top:6px;font-size:10px;color:#7a4a4a;
+  }
+  .about-sec.facts li::before{content:"·";color:var(--accent);font-size:16px;top:1px}
+  .kv{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;color:var(--muted)}
+  .kv b{color:#c8d6cf;font-weight:500;font-family:"SF Mono","Cascadia Mono",Consolas,"Courier New",monospace;font-style:normal}
+  .credit{font-size:11.5px;color:#6b7c74;line-height:1.7;margin-top:2px}
+
+  /* tabbar */
+  .tabbar{
+    flex:0 0 66px;display:flex;align-items:center;justify-content:space-around;
+    border-top:1px solid rgba(255,255,255,.06);
+    background:linear-gradient(180deg,rgba(10,15,12,.4),rgba(8,12,10,.96));
+    padding-bottom:4px;
+  }
+  .tabbtn{
+    background:none;border:0;color:#66776e;font:inherit;font-size:10.5px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 16px;border-radius:12px;
+  }
+  .tabbtn.active{color:var(--accent)}
+  .tabbtn svg{width:22px;height:22px}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:94px;transform:translate(-50%,14px);
+    background:#1b2620;border:1px solid rgba(59,224,143,.28);color:#dff5e9;
+    font-size:12.5px;padding:9px 15px;border-radius:12px;
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.8);
+    opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:300px;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* scrim + sheet */
+  .scrim{
+    position:fixed;inset:0;background:rgba(3,6,5,.66);backdrop-filter:blur(10px);
+    display:grid;place-items:end center;z-index:80;opacity:0;transition:opacity .18s;
+  }
+  .scrim.show{opacity:1}
+  .sheet{
+    width:min(420px,100%);background:#141d18;border:1px solid rgba(255,255,255,.09);
+    border-radius:22px 22px 0 0;padding:18px 18px 24px;
+    transform:translateY(18px);transition:transform .22s ease;
+    max-height:80vh;overflow:auto;
+  }
+  .scrim.show .sheet{transform:none}
+  .sheet.center{border-radius:22px;margin:auto}
+  .sheet-ico{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;margin-bottom:12px;background:rgba(59,224,143,.14);color:var(--accent)}
+  .sheet-ico.warn{background:rgba(255,180,84,.13);color:var(--warn)}
+  .sheet h4{margin:0 0 8px;font-size:16.5px;font-weight:650;letter-spacing:.2px}
+  .sheet p{margin:0 0 16px;font-size:12.8px;color:#93a49b;line-height:1.68}
+  .sheet .btn{margin-bottom:8px}
+  .opt{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.05);
+    font-size:14.5px;cursor:pointer;color:var(--text);background:none;border-left:0;border-right:0;border-top:0;width:100%;font-family:inherit;
+  }
+  .opt:last-child{border-bottom:0}
+  .opt small{color:var(--muted);font-size:11.5px;display:block;margin-top:2px}
+  .opt .check{color:var(--accent);opacity:0;font-size:14px}
+  .opt.sel .check{opacity:1}
+  .opt.sel{border-color:rgba(59,224,143,.2)}
+
+  @media (max-width:520px){
+    body{padding:0;display:block}
+    .phone{width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none}
+    .statusbar{padding-top:8px;height:52px}
+    .toast{bottom:78px}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <div class="screen">
+      <div class="statusbar">
+        <span id="clock">23:56</span>
+        <div class="sb-right">
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="17" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 10.2a1.4 1.4 0 1 1 0-2.8 1.4 1.4 0 0 1 0 2.8Zm0-4.6c1.4 0 2.7.5 3.7 1.4l-1.1 1.1A4 4 0 0 0 8 7.1a4 4 0 0 0-2.6.9L4.3 6.9c1-.9 2.3-1.4 3.7-1.4Zm0-3.4c2.3 0 4.5.9 6.1 2.5l-1.1 1.1A7.1 7.1 0 0 0 8 3.7c-2 0-3.9.8-5.3 2.2L1.6 4.8A8.7 8.7 0 0 1 8 2.2Z"/></svg>
+          <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x=".6" y=".6" width="21.8" height="11.8" rx="3.2" stroke="currentColor" stroke-opacity=".45"/><rect x="2.4" y="2.4" width="15" height="8.2" rx="1.8" fill="currentColor"/><path d="M24.2 4.4v4.2c.9-.3 1.4-1.1 1.4-2.1s-.5-1.8-1.4-2.1Z" fill="currentColor" fill-opacity=".5"/></svg>
+        </div>
+      </div>
+
+      <main class="content">
+        <!-- ============ 锁定 ============ -->
+        <section class="pane" data-pane="lock">
+          <div class="banner"><span class="dot-live"></span>UI 演示模式 · 未连接 airtrafficd</div>
+
+          <div class="hero">
+            <div class="hero-mark">
+              <div class="mark-word"><span>NaCl</span><small>IPCC</small></div>
+            </div>
+            <h1>锁定 IPCC</h1>
+            <p>固定 SIM 对应的运营商配置，减少重启后的重新激活。</p>
+          </div>
+
+          <div class="card status" id="statusCard"></div>
+
+          <div class="card">
+            <div class="field-label">IMSI</div>
+            <div class="input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5d6d66" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h10M7 13h6"/></svg>
+              <input id="imsi" inputmode="numeric" maxlength="15" placeholder="46000 00000 0000" autocomplete="off" spellcheck="false" />
+            </div>
+            <p class="hint" id="imsiHint">IMSI 会在开始监听并刷新 SIM 信号后自动填入，也可以手动输入。</p>
+
+            <div class="field-label">运营商配置</div>
+            <button class="select" data-action="picker">
+              <span><span id="bundleLabel">CMCC_cn</span> <small id="bundleName">· 中国移动</small></span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c8d84" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <p class="hint mono">Bundle 名称必须对应 /System/Library/Carrier Bundles/iPhone 下的文件夹。</p>
+          </div>
+
+          <button class="btn primary" data-action="lock" id="lockBtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2.6"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+            <span id="lockLabel">锁定运营商配置</span>
+          </button>
+          <button class="btn ghost" data-action="restore">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+            恢复
+          </button>
+
+          <div class="card row-toggle">
+            <div>
+              <div class="row-title">自动获取 IMSI 并锁定</div>
+              <div class="row-sub">插卡后监听 SIM 信号变化</div>
+            </div>
+            <button class="switch" id="autoSwitch" aria-pressed="true" data-action="auto" aria-label="自动获取 IMSI"></button>
+          </div>
+        </section>
+
+        <!-- ============ 日志 ============ -->
+        <section class="pane" data-pane="logs" hidden>
+          <div class="pane-title">
+            <h2>运行日志</h2>
+            <span class="chip" id="logCount">0 条</span>
+          </div>
+          <div class="logbox" id="logBox"></div>
+          <div class="log-actions">
+            <button class="btn ghost" data-action="export">导出日志</button>
+            <button class="btn ghost" data-action="clear">清除</button>
+          </div>
+          <p class="hint" style="margin-top:14px">日志包含操作序列与模拟的 AirTraffic 返回；真实版本会同时镜像到 <span class="mono">/var/mobile/Library/Logs/NaCl/</span>。</p>
+        </section>
+
+        <!-- ============ 关于 ============ -->
+        <section class="pane" data-pane="about" hidden>
+          <div class="pane-title">
+            <h2>简介</h2>
+            <span class="chip mono">0.1.0 (1)</span>
+          </div>
+
+          <div class="about-sec">
+            <p>氯化钠（NaCl）用于把某个 IMSI 与本地运营商配置绑定：通过 Overlay 目录登记一条指向 Carrier Bundle 的链接，让 CommCenter 优先命中本地配置，从而减少卡贴场景下的重复匹配与重新激活。</p>
+          </div>
+
+          <div class="about-sec">
+            <h3>跳激活的原理</h3>
+            <p>卡贴会改写或伪造 SIM 上报的网络标识。CommCenter 在重启、基带复位或 SIM 重新注册之后，需要根据 IMSI/ICCID 重新挑选运营商配置；一旦匹配结果不稳定，就会走「需要重新激活」的流程。</p>
+            <p>夜间待机、长时间静置后重新唤醒时更容易出现：系统会进行维护任务，基带复位并重新读取卡信息，于是再次触发匹配。</p>
+          </div>
+
+          <div class="about-sec">
+            <h3>锁定 IPCC 的目的</h3>
+            <p>把「IMSI → 运营商配置」写进 Overlay，使 CommCenter 的匹配结果固定下来，减少日常使用、重启、基带复位后的配置漂移，也就减少了反复弹出的激活流程。</p>
+          </div>
+
+          <div class="about-sec">
+            <h3>无法实现的功能</h3>
+            <ul>
+              <li>不能解除网络锁，也不能绕过运营商侧的激活策略。</li>
+              <li>不能阻止卡贴改动 IMSI，或阻止基带上报新值。</li>
+              <li>不能保证换卡、换机、差旅漫游后仍然生效。</li>
+              <li>不能修改系统分区，也不能在没有 root 的普通环境里写入 Overlay。</li>
+              <li>不能保证跨大版本系统升级或 AirTraffic 失效后继续可用。</li>
+            </ul>
+          </div>
+
+          <div class="about-sec">
+            <h3>演示开关</h3>
+            <div class="card row-toggle" style="margin-bottom:8px">
+              <div>
+                <div class="row-title">模拟写入失败</div>
+                <div class="row-sub">在 Overlay 写入步骤返回错误</div>
+              </div>
+              <button class="switch" id="failSwitch" aria-pressed="false" data-action="fail"></button>
+            </div>
+          </div>
+
+          <div class="about-sec">
+            <h3>参考</h3>
+            <ul class="facts">
+              <li>漏洞面：AirTraffic / AirLift</li>
+              <li>注销思路：NeoSpring</li>
+              <li>原理参考：CarrierSIM</li>
+              <li>界面参考：AirBeep / AirCard-iOS</li>
+            </ul>
+            <p class="credit">以上项目仅作为公开思路来源标注；本项目为独立实现，界面与交互均为重写，不含其代码。</p>
+          </div>
+
+          <div class="about-sec">
+            <h3>版本</h3>
+            <div class="kv"><span>应用</span><b>氯化钠 0.1.0 (1)</b></div>
+            <div class="kv"><span>最低系统</span><b>iOS 16.0</b></div>
+            <div class="kv"><span>权限</span><b>仅演示 / 无特权</b></div>
+            <div class="kv"><span>构建</span><b>SwiftUI · 未签名</b></div>
+          </div>
+          <p class="footnote">仅供学习与自有设备调试，请遵守当地法律与运营商条款。</p>
+        </section>
+      </main>
+
+      <nav class="tabbar">
+        <button class="tabbtn active" data-action="tab" data-tab="lock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2.6"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></svg>
+          锁定
+        </button>
+        <button class="tabbtn" data-action="tab" data-tab="logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 5h14M5 10h14M5 15h9M5 20h6"/></svg>
+          日志
+        </button>
+        <button class="tabbtn" data-action="tab" data-tab="about">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/></svg>
+          关于
+        </button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="scrim" id="scrim" hidden></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var BUNDLES = [
+    { id: "CMCC_cn",    name: "中国移动", color: "#3be08f" },
+    { id: "Unicom_cn",  name: "中国联通", color: "#ff7a7a" },
+    { id: "Telecom_cn", name: "中国电信", color: "#62c9f5" },
+    { id: "CBN_cn",     name: "中国广电", color: "#c9a3ff" }
+  ];
+  var DEMO_IMSI = "460003403304039";
+  var LOCK_STEPS = [
+    "请求 AirTraffic 授权上下文",
+    "读取 SIM 槽位与 IMSI",
+    "校验 Bundle 名称与路径",
+    "写入 Overlay 链接",
+    "通知 CommCenter 重载配置",
+    "校验生效状态"
+  ];
+
+  var state = {
+    tab: "lock",
+    imsi: "",
+    bundle: "CMCC_cn",
+    phase: "idle",      // idle | locking | locked | restoring | failed
+    stepIndex: -1,
+    receipt: null,
+    error: "",
+    auto: true,
+    demoFail: false,
+    touched: false,
+    logs: []
+  };
+
+  var $ = function(sel){ return document.querySelector(sel); };
+  var clockEl = $("#clock");
+  var toastEl = $("#toast");
+  var scrimEl = $("#scrim");
+  var toastTimer = null;
+
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function now(){ var d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
+
+  function log(level, text){
+    state.logs.push({ t: now(), level: level, text: text });
+    renderLogs();
+  }
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2100);
+  }
+
+  function bundleName(id){
+    for (var i = 0; i < BUNDLES.length; i++) if (BUNDLES[i].id === id) return BUNDLES[i].name;
+    return "";
+  }
+  function validIMSI(v){ return /^\d{6,15}$/.test(v); }
+
+  /* ---------------- status card ---------------- */
+  function renderStatus(){
+    var card = $("#statusCard");
+    var html = "";
+    if (state.phase === "locking" || state.phase === "restoring"){
+      var pct = Math.round(((state.stepIndex + 1) / LOCK_STEPS.length) * 100);
+      html =
+        '<div class="status-ico"><div class="spinner"></div></div>' +
+        '<div class="status-body">' +
+          '<div class="status-title">' + (state.phase === "locking" ? "锁定中…" : "正在恢复…") + '</div>' +
+          '<div class="status-sub">' + (state.stepIndex >= 0 ? escapeHTML(LOCK_STEPS[state.stepIndex]) : "准备中") + '</div>' +
+          '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+        '</div>';
+    } else if (state.phase === "locked"){
+      var r = state.receipt;
+      html =
+        '<div class="status-ico">' +
+          '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2.6"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><path d="m9.5 15 2 2 3.5-3.6"/></svg>' +
+        '</div>' +
+        '<div class="status-body">' +
+          '<div class="status-title">Locked: ' + escapeHTML(r.bundle) + ' · ' + escapeHTML(r.imsi) + '</div>' +
+          '<div class="status-sub">该 IMSI 的 Overlay 链接已生效。</div>' +
+          '<div class="status-meta">' +
+            '<span class="chip mono">airtrafficd</span>' +
+            '<span class="chip mono">' + escapeHTML(r.at) + '</span>' +
+            '<span class="chip">已验证</span>' +
+          '</div>' +
+        '</div>';
+      card.classList.add("ok");
+    } else if (state.phase === "failed"){
+      html =
+        '<div class="status-ico">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v6"/><circle cx="12" cy="16.6" r="1" fill="currentColor" stroke="none"/></svg>' +
+        '</div>' +
+        '<div class="status-body">' +
+          '<div class="status-title">写入失败</div>' +
+          '<div class="status-sub">' + escapeHTML(state.error || "未知错误") + '</div>' +
+          '<div class="status-meta"><span class="chip">可重试</span><span class="chip mono">step 4/6</span></div>' +
+        '</div>';
+      card.classList.add("bad");
+    } else {
+      html =
+        '<div class="status-ico">' +
+          '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10M8 3v3.5l-3 8A4 4 0 0 0 8.7 20h6.6a4 4 0 0 0 3.7-5.5l-3-8V3"/><path d="M7.6 14.5h8.8"/></svg>' +
+        '</div>' +
+        '<div class="status-body">' +
+          '<div class="status-title">尚未锁定</div>' +
+          '<div class="status-sub">填写 IMSI 后写入 Overlay。</div>' +
+        '</div>';
+    }
+    if (state.phase !== "locked") card.classList.remove("ok");
+    if (state.phase !== "failed") card.classList.remove("bad");
+    card.innerHTML = html;
+  }
+
+  /* ---------------- logs ---------------- */
+  function renderLogs(){
+    var box = $("#logBox");
+    var items = state.logs.slice().reverse();
+    if (!items.length){
+      box.innerHTML = '<div class="empty">还没有日志，先做一次锁定试试。</div>';
+    } else {
+      box.innerHTML = items.map(function(l){
+        return '<div class="log-row ' + l.level + '">' +
+          '<span class="log-time">' + l.t + '</span>' +
+          '<span class="log-dot"></span>' +
+          '<span class="log-text">' + escapeHTML(l.text) + '</span>' +
+        '</div>';
+      }).join("");
+    }
+    $("#logCount").textContent = state.logs.length + " 条";
+  }
+
+  /* ---------------- lockscreen helpers ---------------- */
+  function syncLockButton(){
+    var btn = $("#lockBtn");
+    var lbl = $("#lockLabel");
+    var busy = state.phase === "locking" || state.phase === "restoring";
+    btn.disabled = busy;
+    if (busy){
+      lbl.textContent = state.phase === "locking" ? "写入中…" : "恢复中…";
+    } else if (state.phase === "locked"){
+      lbl.textContent = "重新写入 Overlay";
+    } else {
+      lbl.textContent = "锁定运营商配置";
+    }
+    var hint = $("#imsiHint");
+    if (state.touched && !validIMSI(state.imsi)){
+      hint.textContent = "IMSI 需要 6–15 位数字，通常是 15 位。";
+      hint.style.color = "#ff8f8f";
+    } else {
+      hint.textContent = "IMSI 会在开始监听并刷新 SIM 信号后自动填入，也可以手动输入。";
+      hint.style.color = "";
+    }
+    $("#bundleLabel").textContent = state.bundle;
+    $("#bundleName").textContent = "· " + bundleName(state.bundle);
+    $("#autoSwitch").setAttribute("aria-pressed", state.auto ? "true" : "false");
+    $("#failSwitch").setAttribute("aria-pressed", state.demoFail ? "true" : "false");
+  }
+
+  function render(){ renderStatus(); syncLockButton(); renderLogs(); }
+
+  /* ---------------- sheets ---------------- */
+  function openSheet(html, center){
+    scrimEl.innerHTML = '<div class="sheet' + (center ? " center" : "") + '">' + html + '</div>';
+    scrimEl.hidden = false;
+    requestAnimationFrame(function(){ scrimEl.classList.add("show"); });
+  }
+  function closeSheet(){
+    scrimEl.classList.remove("show");
+    setTimeout(function(){ scrimEl.hidden = true; scrimEl.innerHTML = ""; }, 180);
+  }
+  scrimEl.addEventListener("click", function(e){ if (e.target === scrimEl) closeSheet(); });
+
+  function confirmLockSheet(){
+    openSheet(
+      '<div class="sheet-ico warn">' +
+        '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 4 2.8 20h18.4L12 4Z"/><path d="M12 10v4.4"/><circle cx="12" cy="17.4" r="1" fill="currentColor" stroke="none"/></svg>' +
+      '</div>' +
+      '<h4>确认 IMSI 是否为本机号码</h4>' +
+      '<p>请先与设备侧核对 IMSI 是否为本机 SIM 的 IMSI。如果错写成卡贴卡的 IMSI，运营商配置会被匹配到错误目标，可能导致信号不稳定、功能异常或反复触发激活。</p>' +
+      '<button class="btn danger" data-action="confirm-lock">已核对，继续锁定</button>' +
+      '<button class="btn ghost" data-action="close">取消</button>',
+      true
+    );
+  }
+
+  /* ---------------- flows ---------------- */
+  async function startLock(){
+    if (state.phase === "locking" || state.phase === "restoring") return;
+    state.touched = true;
+    if (!validIMSI(state.imsi)){ toast("IMSI 需要 6–15 位数字"); syncLockButton(); return; }
+    state.phase = "locking";
+    state.error = "";
+    state.stepIndex = -1;
+    log("info", "开始锁定流程 · bundle=" + state.bundle + " · imsi=" + state.imsi);
+    render();
+    try {
+      for (var i = 0; i < LOCK_STEPS.length; i++){
+        state.stepIndex = i;
+        renderStatus();
+        await sleep(340);
+        log("info", LOCK_STEPS[i]);
+        if (state.demoFail && LOCK_STEPS[i] === "写入 Overlay 链接"){
+          throw new Error("AirTraffic 返回 0xE00002C1 · Operation not permitted（模拟）");
+        }
+      }
+      state.receipt = { imsi: state.imsi, bundle: state.bundle, at: now() };
+      state.phase = "locked";
+      log("ok", "Overlay 已生效 · " + state.bundle + " → " + state.imsi);
+      toast("已锁定 " + state.bundle);
+    } catch (err){
+      state.phase = "failed";
+      state.error = err && err.message ? err.message : String(err);
+      log("error", state.error);
+      toast("写入失败，见日志");
+    }
+    render();
+  }
+
+  async function startRestore(){
+    if (state.phase === "locking" || state.phase === "restoring") return;
+    if (state.phase === "idle"){ toast("当前没有需要恢复的写入"); return; }
+    state.phase = "restoring";
+    state.stepIndex = 0;
+    log("warn", "开始恢复 · 移除 Overlay 登记");
+    render();
+    var steps = ["移除 Overlay 登记", "重载 CommCenter 配置", "校验系统默认匹配"];
+    for (var i = 0; i < steps.length; i++){
+      state.stepIndex = Math.min(2, i + 1);
+      renderStatus();
+      await sleep(320);
+      log("info", steps[i]);
+    }
+    state.phase = "idle";
+    state.receipt = null;
+    state.stepIndex = -1;
+    log("ok", "已恢复系统默认运营商配置");
+    toast("已恢复");
+    render();
+  }
+
+  function autoFillIMSI(){
+    if (state.imsi) return;
+    state.imsi = DEMO_IMSI;
+    $("#imsi").value = DEMO_IMSI;
+    log("info", "已从 SIM 读取 IMSI（演示数据）");
+    toast("已读取 IMSI");
+    syncLockButton();
+  }
+
+  function download(name, text){
+    var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  }
+
+  /* ---------------- tabs ---------------- */
+  function setTab(tab){
+    state.tab = tab;
+    document.querySelectorAll(".tabbtn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    document.querySelectorAll(".pane").forEach(function(p){
+      p.hidden = p.getAttribute("data-pane") !== tab;
+    });
+    $(".content").scrollTop = 0;
+  }
+
+  /* ---------------- events ---------------- */
+  document.addEventListener("click", function(e){
+    var el = e.target.closest("[data-action]");
+    if (!el) return;
+    var action = el.getAttribute("data-action");
+
+    if (action === "tab"){ setTab(el.getAttribute("data-tab")); return; }
+    if (action === "picker"){
+      var rows = BUNDLES.map(function(b){
+        var sel = b.id === state.bundle;
+        return '<button class="opt' + (sel ? " sel" : "") + '" data-action="pick" data-bundle="' + b.id + '">' +
+          '<span>' + b.id + '<small>' + b.name + '</small></span>' +
+          '<span class="check">✓</span>' +
+        '</button>';
+      }).join("");
+      openSheet('<h4>运营商配置</h4><p>Bundle 名称必须与 /System/Library/Carrier Bundles/iPhone 下的文件夹同名。</p>' + rows);
+      return;
+    }
+    if (action === "pick"){
+      state.bundle = el.getAttribute("data-bundle");
+      log("info", "已选择运营商配置 " + state.bundle);
+      closeSheet();
+      syncLockButton();
+      return;
+    }
+    if (action === "lock"){
+      if (state.phase === "locked"){ confirmLockSheet(); return; }
+      confirmLockSheet();
+      return;
+    }
+    if (action === "confirm-lock"){ closeSheet(); setTimeout(startLock, 140); return; }
+    if (action === "restore"){
+      openSheet(
+        '<div class="sheet-ico warn"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></div>' +
+        '<h4>恢复到系统默认配置？</h4>' +
+        '<p>将移除本机写入的 Overlay 登记，之后 CommCenter 会重新按 SIM 匹配运营商配置。卡贴场景下可能会再次出现跳激活。</p>' +
+        '<button class="btn danger" data-action="confirm-restore">恢复</button>' +
+        '<button class="btn ghost" data-action="close">取消</button>',
+        true
+      );
+      return;
+    }
+    if (action === "confirm-restore"){ closeSheet(); setTimeout(startRestore, 140); return; }
+    if (action === "auto"){
+      state.auto = !state.auto;
+      log("info", "自动获取 IMSI：" + (state.auto ? "开" : "关"));
+      syncLockButton();
+      if (state.auto) setTimeout(autoFillIMSI, 600);
+      return;
+    }
+    if (action === "fail"){
+      state.demoFail = !state.demoFail;
+      log("warn", "模拟失败开关：" + (state.demoFail ? "开" : "关"));
+      syncLockButton();
+      toast(state.demoFail ? "下次写入会在第 4 步失败" : "已关闭模拟失败");
+      return;
+    }
+    if (action === "export"){
+      if (!state.logs.length){ toast("没有日志可导出"); return; }
+      var body = state.logs.map(function(l){ return "[" + l.t + "] " + l.level.toUpperCase() + " " + l.text; }).join("\n");
+      download("nacl-" + Date.now() + ".log", "氯化钠 运行日志\n" + body + "\n");
+      log("ok", "日志已导出");
+      toast("已导出");
+      return;
+    }
+    if (action === "clear"){
+      state.logs = [];
+      renderLogs();
+      toast("已清除");
+      return;
+    }
+    if (action === "close"){ closeSheet(); return; }
+  });
+
+  $("#imsi").addEventListener("input", function(e){
+    var v = e.target.value.replace(/\D/g, "").slice(0, 15);
+    e.target.value = v;
+    state.imsi = v;
+    state.touched = true;
+    syncLockButton();
+  });
+
+  function tick(){
+    var d = new Date();
+    clockEl.textContent = pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  tick(); setInterval(tick, 20000);
+
+  log("info", "airtrafficd 未连接（演示模式）");
+  log("info", "已加载 " + BUNDLES.length + " 个运营商配置");
+
+  /* 深链接，方便逐屏演示 / 截图：#locked #failed #logs #about */
+  var deep = (location.hash || "").replace("#", "");
+  if (deep === "locked" || deep === "failed"){
+    state.imsi = DEMO_IMSI;
+    $("#imsi").value = DEMO_IMSI;
+    state.touched = true;
+    if (deep === "locked"){
+      state.phase = "locked";
+      state.receipt = { imsi: DEMO_IMSI, bundle: state.bundle, at: "23:58:12" };
+      log("ok", "Overlay 已生效 · " + state.bundle + " → " + DEMO_IMSI);
+    } else {
+      state.phase = "failed";
+      state.error = "AirTraffic 返回 0xE00002C1 · Operation not permitted（模拟）";
+      log("error", state.error);
+    }
+  } else if (deep === "logs" || deep === "about"){
+    setTab(deep);
+  }
+
+  render();
+  if (!state.imsi) setTimeout(autoFillIMSI, 900);
+})();
+</script>
+</body>
+</html>

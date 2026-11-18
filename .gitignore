@@ -1,0 +1,21 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+NaCl-Info.plist
+Payload/
+dist/
+*.ipa
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# local logs & test artifacts
+logs/
+prototype/.edge-*/
+prototype/shot-*.png
+
+# macOS
+.DS_Store
