@@ -1,8 +1,8 @@
-# AirIPCC Lite
+# NaCl IPCC
 
-一个只做「锁定 IPCC」的侧载工具，基于 [AirBeep 2.5.2](https://github.com/) 源码改造。
+氯化钠（NaCl）分支的 IPCC 产品：只做「锁定 IPCC」，已移除通话录音提示音功能。基于 AirBeep 2.5.2 的写入通道改造。
 
-保留 AirBeep 原有的通话提示音静音功能，新增第二个页签「锁定 IPCC」：把内置的运营商配置写进
+把内置的运营商配置写进
 `/var/mobile/Library/Carrier Bundles/iPhone/`，然后让设备重启，使 CommCenter 加载国内运营商。
 
 **没有激活码，没有联网校验，没有任何服务端依赖。**
