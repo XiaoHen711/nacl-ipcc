@@ -74,55 +74,86 @@ enum NetworkStatus {
         interfaces().first { isTunnelInterface($0.name) && $0.isUp && $0.isRunning }?.ipv4
     }
 
-    /// Extra candidate hosts for the Rust core. Tunnel interfaces are excluded
-    /// on purpose: dialing our own tunnel address reaches the wrong end of a
-    /// loopback VPN. Non-tunnel addresses cover the case where the tunnel
-    /// listener yields a port but no host. Wi-Fi first.
-    static func tunnelHostCandidates() -> [String] {
-        let usable = interfaces().filter {
-            !isTunnelInterface($0.name) && !$0.ipv4.hasPrefix("127.") && $0.isUp && $0.isRunning
+    /// 所有可能承载 RSD 的回环地址，按可信度排序。
+    /// LocalDevVPN 是 `10.7.0.1`，SideStore WireGuard / StikDebug 常见 `172.16.0.1`，
+    /// 也有把设备端放在隧道地址减一的实现，所以这里一并列出来逐个探测。
+    static func loopbackTargetCandidates() -> [String] {
+        var list: [String] = []
+        func add(_ value: String?) {
+            guard let value, !value.isEmpty, !list.contains(value) else { return }
+            list.append(value)
         }
-        var result: [String] = []
-        for iface in usable where iface.name == "en0" {
-            if !result.contains(iface.ipv4) { result.append(iface.ipv4) }
+        add(TargetHostConfig.effective)
+        add(tunnelInterfaceAddress)
+        if let tunnel = tunnelInterfaceAddress {
+            let parts = tunnel.split(separator: ".")
+            if parts.count == 4, let last = Int(parts[3]), last > 1 {
+                add(parts[0...2].joined(separator: ".") + "." + String(last - 1))
+            }
         }
-        for iface in usable where iface.name != "en0" {
-            if !result.contains(iface.ipv4) { result.append(iface.ipv4) }
-        }
-        return result
+        add("172.16.0.1")
+        add("10.7.0.1")
+        return list
     }
 
-    /// Push the configured host plus runtime interface candidates into the
-    /// Rust core, so tunnel dials adapt to the current network configuration.
-    /// The configured host stays primary; the Rust side appends its own
-    /// built-in LocalDevVPN fallbacks after our candidates.
-    static func syncTargetHostsToAirlift() {
-        // The user's Advanced-settings override wins over the build-time value.
-        let configured = TargetHostConfig.effective
-        let isCustom = TargetHostConfig.isCustomized
-        if !configured.isEmpty {
-            _ = configured.withCString { al_set_target_host($0) }
-        }
-
-        var candidates = tunnelHostCandidates()
-        if !configured.isEmpty && !candidates.contains(configured) {
-            candidates.insert(configured, at: 0)
-        }
-        AirBeepLog.shared.append(
-            "network: target=\(configured)\(isCustom ? " (custom)" : "") "
-                + "candidates=\(candidates.isEmpty ? "none" : candidates.joined(separator: ",")) "
-                + "wifi=\(wifiActive) tunnel=\(tunnelInterfaceAddress ?? "down")"
-        )
-
-        // al_set_target_hosts copies the strings; strdup keeps them alive for
-        // the duration of the call and free() releases them right after.
-        let cStrings = candidates.map { strdup($0) }
-        defer { cStrings.forEach { free($0) } }
-        let pointers = cStrings.map { UnsafePointer($0) }
+    /// 把单个地址同时设成主目标和候选列表，避免 Rust 层回落到内置地址。
+    static func applyTargetHost(_ host: String) {
+        guard !host.isEmpty else { return }
+        _ = host.withCString { al_set_target_host($0) }
+        let duplicated = [strdup(host)]
+        defer { duplicated.forEach { free($0) } }
+        let pointers = duplicated.map { UnsafePointer($0) }
         pointers.withUnsafeBufferPointer { buffer in
             if let base = buffer.baseAddress {
                 _ = al_set_target_hosts(base, buffer.count)
             }
         }
+    }
+
+    private static var lastSelectedTarget: String?
+
+    /// 探测回环隧道里真正可连的 RSD 地址并锁定它。
+    @discardableResult
+    static func selectReachableTarget(force: Bool = false) async -> String? {
+        let configured = TargetHostConfig.effective
+        let candidates = loopbackTargetCandidates()
+
+        if !force, let cached = lastSelectedTarget, candidates.contains(cached) {
+            applyTargetHost(cached)
+            return cached
+        }
+
+        var reachable: [String] = []
+        for host in candidates {
+            if await RSDProbe.canConnect(host: host) {
+                reachable.append(host)
+            }
+        }
+        AirBeepLog.shared.append(
+            "目标探测：\(candidates.joined(separator: ", ")) → "
+                + "可连 \(reachable.isEmpty ? "无" : reachable.joined(separator: ", "))"
+        )
+
+        let chosen = reachable.contains(configured) ? configured : reachable.first
+        guard let chosen else {
+            applyTargetHost(configured)
+            return nil
+        }
+        applyTargetHost(chosen)
+        lastSelectedTarget = chosen
+        AirBeepLog.shared.append("目标：使用 \(chosen):49152")
+        return chosen
+    }
+
+    /// 只把配置里的回环地址推给 Rust 层。Wi-Fi 地址对 RSD 没用，
+    /// 混进候选只会让内核在隧道没起来时误连到别的网段。
+    static func syncTargetHostsToAirlift() {
+        let configured = TargetHostConfig.effective
+        let isCustom = TargetHostConfig.isCustomized
+        AirBeepLog.shared.append(
+            "network: target=\(configured)\(isCustom ? " (custom)" : "") "
+                + "wifi=\(wifiActive) tunnel=\(tunnelInterfaceAddress ?? "down")"
+        )
+        applyTargetHost(configured)
     }
 }

@@ -129,16 +129,18 @@ final class LockStore: ObservableObject {
 
         Task { [weak self] in
             guard let self else { return }
+            let chosen = await NetworkStatus.selectReachableTarget()
             let caps = await IPCCInstaller.shared.capabilitySummary()
             var problems: [String] = []
             if !pairingReady { problems.append("配对文件未就绪") }
             if !tunnel { problems.append("LocalDevVPN 未连接") }
             if caps.isEmpty { problems.append("缺少注入入口") }
             if !supported { problems.append("系统不在支持范围") }
+            if tunnel && chosen == nil { problems.append("RSD 端口不可达") }
 
             let next: ChannelState
             if problems.isEmpty {
-                next = .ready("通道就绪 · \(address ?? "tunnel") · \(caps)")
+                next = .ready("通道就绪 · \(chosen ?? address ?? "tunnel") · \(caps)")
             } else {
                 next = .problem(problems.joined(separator: " · "))
             }

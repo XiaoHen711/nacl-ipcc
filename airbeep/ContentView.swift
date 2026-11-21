@@ -10,6 +10,7 @@ struct AirBeepApp: App {
         NetworkStatus.syncTargetHostsToAirlift()
         // Record the environment once, so an exported log explains itself.
         NaClDiagnostics.logStartup()
+        Task { await NetworkStatus.selectReachableTarget() }
     }
 
     var body: some Scene {

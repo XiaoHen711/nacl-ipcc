@@ -146,6 +146,7 @@ struct AirBeepAirliftSetupView: View {
         connectionError = nil
         Task {
             defer { checking = false }
+            _ = await NetworkStatus.selectReachableTarget(force: true)
             do {
                 _ = try await TendiesEngine.shared.detectPosterBoardContainer(
                     pairingPath: PairingController.pairingFilePath()

@@ -16,6 +16,8 @@ final class AirliftCarrierService: CarrierOverlayService {
               imsi: String,
               onStep: @MainActor (Int) -> Void) async throws -> LockReceipt {
         onStep(0)
+        // 先把真正可连的 RSD 地址探出来，避免 Rust 层回落到内置的 172.16.0.1。
+        _ = await NetworkStatus.selectReachableTarget(force: true)
         let pairing = PairingController.pairingFilePath()
         let size = (try? FileManager.default.attributesOfItem(atPath: pairing)[.size] as? Int) ?? 0
         guard FileManager.default.fileExists(atPath: pairing), size > 0 else {

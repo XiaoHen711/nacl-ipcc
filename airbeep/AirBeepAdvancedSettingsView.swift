@@ -127,6 +127,7 @@ struct AirBeepAdvancedSettingsView: View {
         AirBeepLog.shared.append("advanced: custom target host set to '\(TargetHostConfig.effective)'")
         // Apply immediately so the next tone operation uses it without a relaunch.
         NetworkStatus.syncTargetHostsToAirlift()
+        Task { await NetworkStatus.selectReachableTarget(force: true) }
         interfaces = NetworkStatus.interfaces()
         savedNotice = String(localized: "Saved")
     }
@@ -137,6 +138,7 @@ struct AirBeepAdvancedSettingsView: View {
         validationError = nil
         AirBeepLog.shared.append("advanced: custom target host cleared, using '\(TargetHostConfig.buildDefault)'")
         NetworkStatus.syncTargetHostsToAirlift()
+        Task { await NetworkStatus.selectReachableTarget(force: true) }
         savedNotice = String(localized: "Reset to default")
     }
 }
