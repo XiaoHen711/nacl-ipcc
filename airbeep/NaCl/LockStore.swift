@@ -4,12 +4,10 @@ import SwiftUI
 /// 单一状态源：界面只读这里，写入只走 `CarrierOverlayService`。
 @MainActor
 final class LockStore: ObservableObject {
-    @Published var imsi = ""
     @Published var bundleID = CarrierBundle.presets[0].id
     @Published var phase: LockPhase = .idle
     @Published var logs: [LogEntry] = []
     @Published var channel: ChannelState = .unknown
-    @Published var attemptedInvalidIMSI = false
 
     private let service: CarrierOverlayService
     private var task: Task<Void, Never>?
@@ -38,10 +36,6 @@ final class LockStore: ObservableObject {
         CarrierBundle.preset(forID: bundleID)
     }
 
-    /// IMSI 只用于日志核对；留空也允许写入。
-    var isValidIMSI: Bool {
-        imsi.isEmpty || imsi.range(of: "^[0-9]{6,15}$", options: .regularExpression) != nil
-    }
 
     var isBusy: Bool { phase.isBusy }
 
@@ -50,34 +44,23 @@ final class LockStore: ObservableObject {
         return "锁定运营商配置"
     }
 
-    var hintText: String {
-        if attemptedInvalidIMSI && !isValidIMSI {
-            return "IMSI 需要 6–15 位数字，或者留空。"
-        }
-        return "IMSI 可留空。填了只写进日志便于核对，不要填成卡贴卡自己的 IMSI。"
-    }
 
     // MARK: - 动作
 
     func lock() {
         guard !isBusy else { return }
-        guard isValidIMSI else {
-            attemptedInvalidIMSI = true
-            append(.error, "IMSI 格式不正确，已取消写入")
-            return
-        }
 
         task?.cancel()
         let carrier = bundle
         phase = .locking(step: 0)
-        append(.info, "开始锁定 · \(carrier.id) · imsi=\(imsi.isEmpty ? "未填" : imsi)")
+        append(.info, "开始锁定 · \(carrier.id)")
 
         task = Task { [weak self] in
             guard let self else { return }
             do {
                 let receipt = try await self.service.lock(
                     carrier: carrier.carrier,
-                    imsi: self.imsi,
+                    imsi: "",
                     onStep: { [weak self] step in
                         guard let self else { return }
                         self.phase = .locking(step: step)

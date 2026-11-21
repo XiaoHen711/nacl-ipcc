@@ -4,6 +4,7 @@ struct LockView: View {
     @EnvironmentObject private var store: LockStore
     @State private var showLockConfirm = false
     @State private var showRestoreConfirm = false
+    @State private var showingSetup = false
 
     var body: some View {
         ZStack {
@@ -11,7 +12,13 @@ struct LockView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
-                    ChannelBanner(state: store.channel)
+                    Button {
+                        showingSetup = true
+                    } label: {
+                        ChannelBanner(state: store.channel)
+                    }
+                    .buttonStyle(.plain)
+
                     hero
                     StatusCard(phase: store.phase)
                     formCard
@@ -21,6 +28,17 @@ struct LockView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(store.isBusy)
+
+                    Button {
+                        showingSetup = true
+                    } label: {
+                        HStack(spacing: 7) {
+                            Image(systemName: "link.badge.plus")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("配对与通道设置")
+                        }
+                    }
+                    .buttonStyle(GhostButtonStyle())
 
                     Button {
                         showRestoreConfirm = true
@@ -44,12 +62,16 @@ struct LockView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 26)
             }
+            .scrollDismissesKeyboard(.immediately)
+        }
+        .sheet(isPresented: $showingSetup, onDismiss: { store.refreshChannel() }) {
+            AirBeepAirliftSetupView()
         }
         .alert("确认写入运营商配置？", isPresented: $showLockConfirm) {
             Button("继续写入") { store.lock() }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("将把 \(store.bundle.id) 写入本机 Carrier Bundles 目录，并注销重载。过程中请勿退出应用；如果 IMSI 写错，运营商配置会匹配到错误目标。")
+            Text("将把 \(store.bundle.id) 写入本机 Carrier Bundles 目录，并注销重载。过程中请勿退出应用。")
         }
         .alert("恢复到系统默认配置？", isPresented: $showRestoreConfirm) {
             Button("恢复", role: .destructive) { store.restore() }
@@ -107,38 +129,7 @@ struct LockView: View {
 
     private var formCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            fieldLabel("IMSI")
-
-            HStack(spacing: 8) {
-                Image(systemName: "simcard")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.faint)
-                TextField("可留空", text: imsiBinding)
-                    .keyboardType(.numberPad)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(.system(size: 16, design: .monospaced))
-                    .foregroundStyle(Theme.text)
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 48)
-            .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.field)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Theme.line, lineWidth: 1)
-            }
-
-            Text(store.hintText)
-                .font(.system(size: 11.5))
-                .foregroundStyle(hintIsError ? Theme.danger : Theme.faint)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
-                .padding(.horizontal, 2)
-
             fieldLabel("运营商配置")
-                .padding(.top, 14)
 
             Menu {
                 bundleMenu
@@ -152,6 +143,21 @@ struct LockView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
                 .padding(.horizontal, 2)
+
+            Divider()
+                .overlay(Theme.line)
+                .padding(.vertical, 12)
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "checkmark.shield")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.accent.opacity(0.8))
+                    .padding(.top, 2)
+                Text("Apple 签名外壳 · 只替换 carrier.plist，signatures 与 *.der.pri 原样保留。")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.faint)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .card()
     }
@@ -213,19 +219,6 @@ struct LockView: View {
 
     // MARK: - 辅助
 
-    private var hintIsError: Bool {
-        store.attemptedInvalidIMSI && !store.isValidIMSI
-    }
-
-    private var imsiBinding: Binding<String> {
-        Binding(
-            get: { store.imsi },
-            set: { newValue in
-                store.imsi = String(newValue.filter(\.isNumber).prefix(15))
-            }
-        )
-    }
-
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
@@ -235,12 +228,7 @@ struct LockView: View {
     }
 
     private func confirmLock() {
-        store.attemptedInvalidIMSI = true
-        if store.isValidIMSI {
-            showLockConfirm = true
-        } else {
-            store.append(.error, "IMSI 格式不正确，已取消写入")
-        }
+        showLockConfirm = true
     }
 }
 
@@ -327,8 +315,7 @@ struct StatusCard: View {
         case .locking(let step):
             return LockFlow.steps[min(max(step, 0), LockFlow.steps.count - 1)]
         case .locked(let receipt):
-            let imsiPart = receipt.imsi.isEmpty ? "未记录 IMSI" : receipt.imsi
-            return "\(imsiPart) · 配置已写入设备"
+            return "\(receipt.imsi.isEmpty ? "配置已写入设备" : receipt.imsi) · 该配置已写入用户域"
         case .restoring(let step):
             return LockFlow.restoreSteps[min(max(step, 0), LockFlow.restoreSteps.count - 1)]
         case .failed(let message):
